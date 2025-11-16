@@ -3,3 +3,4 @@
 __pycache__/
 .env
 terraria_db.*
+terraria_db/
