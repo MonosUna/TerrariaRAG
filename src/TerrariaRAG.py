@@ -77,13 +77,13 @@ class TerrariaRAG:
         self.mistral = None
         self.models_list = []
         self.message_history = []
-        self.temperature = 0.2
+        self.temperature = 0.1
         
         print("Initializing TerrariaRAG components...")
         try:
             self.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large")
             self.vectorstore = Chroma(persist_directory="./terraria_db", embedding_function=self.embeddings)
-            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
+            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
             self.set_api_key()
             self.mistral = Mistral(api_key=self.api_key)
             self.models_list = self._get_models_from_client()
@@ -124,9 +124,11 @@ class TerrariaRAG:
         result, _ = self._generate_response_with_query(query, temperature=self.temperature)
         return result
     
-    def _generate_response_with_query(self, query, temperature=0.2):
-        docs = self.retriever._get_relevant_documents(query + ' Рецепт' if 'рецепт' in query.lower() else '', run_manager=None)
+    def _generate_response_with_query(self, query, temperature=0.1):
+        docs = self.retriever._get_relevant_documents(query, run_manager=None)
+        #print(f"Retrieved {docs[0].page_content} documents for the query.")
         context = "\n\n".join([d.page_content for d in docs])
+        #print("Context for LLM:", context)
         # TODO Сделать историю !!!
         #if len(self.message_history) == 0:
         self.message_history = [
