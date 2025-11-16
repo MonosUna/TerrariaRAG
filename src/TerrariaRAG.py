@@ -73,6 +73,12 @@ class TerrariaRAG:
         Вопрос: {question}
         """
         self.api_key = None
+        self.model = "mistral-7b-instruct-v0.1"
+        self.mistral = None
+        self.models_list = []
+        self.message_history = []
+        self.temperature = 0.2
+        
         print("Initializing TerrariaRAG components...")
         try:
             self.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large")
@@ -80,10 +86,33 @@ class TerrariaRAG:
             self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
             self.set_api_key()
             self.mistral = Mistral(api_key=self.api_key)
+            self.models_list = self._get_models_from_client()
             print("TerrariaRAG initialized successfully.")
         except Exception as e:
             print(f"Error during initialization: {e}")
 
+    def _get_models_from_client(self):
+        if not self.mistral:
+            raise ValueError("Mistral client is not initialized.")
+        models_list = self.mistral.models.list()
+        return [m.id for m in models_list.data]
+    
+    def get_models(self):
+        return self.models_list
+
+    def set_model(self, model_name):
+        if model_name not in self.models_list:
+            raise ValueError(f"Model '{model_name}' is not available. Use get_models() to see the list of available models.")
+        self.model = model_name
+        self.delete_message_history()
+        
+    def delete_message_history(self):
+        self.message_history = []
+
+    def set_temperature(self, temperature):
+        if not (0.0 <= temperature <= 1.0):
+            raise ValueError("Temperature must be between 0.0 and 1.0")
+        self.temperature = temperature
         
     def set_api_key(self):
         load_dotenv()
@@ -92,23 +121,25 @@ class TerrariaRAG:
             raise ValueError("API_KEY not found in environment variables.")
     
     def generate_response(self, query):
-        result, _ = self._generate_response_with_query(query)
+        result, _ = self._generate_response_with_query(query, temperature=self.temperature)
         return result
     
-    def _generate_response_with_query(self, query):
+    def _generate_response_with_query(self, query, temperature=0.2):
         docs = self.retriever._get_relevant_documents(query + ' Рецепт' if 'рецепт' in query.lower() else '', run_manager=None)
         context = "\n\n".join([d.page_content for d in docs])
-
-        # Отправляем в Mistral
-        messages = [
+        # TODO Сделать историю !!!
+        #if len(self.message_history) == 0:
+        self.message_history = [
             {"role": "system", "content": self.SYSTEM_PROMPT},
             {"role": "user", "content": self.USER_PROMPT.format(context=context, question=query)},
         ]
 
         response = self.mistral.chat.complete(
-            model="open-mistral-nemo",
-            messages=messages,
-            temperature=0.2
+            model=self.model,
+            messages=self.message_history,
+            temperature=temperature
         )
-
+        
+        #self.message_history.append({"role": "assistant", "content": response.choices[0].message.content})
+        
         return response.choices[0].message.content, docs
