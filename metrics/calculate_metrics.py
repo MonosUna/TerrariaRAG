@@ -68,13 +68,21 @@ def evaluate_answer(eval_client, question, groundtruth, my_answer, baseline_answ
     system_prompt = """
 Ты — строгий оценщик ответов на вопросы по Terraria.
 Сравни два ответа на один вопрос с точки зрения качества и соответствия groundtruth.
+Сильно наказывай ложь со стороны модели.
+Если ответ модели содержит дополнительную информацию, то не наказывай модель.
+Вот примерные критерии.
+0 - ответ полностью неверен.
+1 - ответ верен лишь немного
+2 - ответ частично верен, но содержит галлюцинации.
+3 - почти полностью верен, но не полон.
+4 - ответ верен, но возможно не совсем полон.
+5 - ответ полностью верен и полон.
 Верни JSON строго в формате:
 
 {
-    "my_model_score": float,      # 0–1
-    "baseline_score": float,      # 0–1
-    "winner": "my_model" | "baseline" | "tie",
-    "analysis": "text"
+    "rag_score": int,      # 0–5
+    "baseline_score": int,      # 0–5
+    "comment": "text"
 }
 """
 
@@ -172,10 +180,9 @@ def calculate_metrics():
         except Exception as e:
             logger.error(f"Evaluation error: {e}")
             eval_result = {
-                "my_model_score": 0,
+                "rag_score": 0,
                 "baseline_score": 0,
-                "winner": "error",
-                "analysis": str(e)
+                "comment": str(e)
             }
 
         # Добавляем новый результат
