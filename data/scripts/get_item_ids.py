@@ -4,9 +4,9 @@ def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-items = load_json("test/items.json")
-recipes = load_json("test/recipes.json")
-tables = load_json("test/tables.json")
+items = load_json("../test/items.json")
+recipes = load_json("../test/recipes.json")
+tables = load_json("../test/tables.json")
 
 # id → название предмета
 item_id_to_name = {item["id"]: item["name"] for item in items}
@@ -51,5 +51,5 @@ for recipe in recipes:
     })
 
 # сохранить итог
-with open("recipes.json", "w", encoding="utf-8") as f:
+with open("../data/recipes.json", "w", encoding="utf-8") as f:
     json.dump(result, f, ensure_ascii=False, indent=4)

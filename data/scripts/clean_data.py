@@ -613,7 +613,7 @@ def clean_entry(entry: dict) -> dict:
     return entry
 
 
-def clean_all(file_path="wiki_dump_raw.json", output_path="wiki_dump_cleaned.json"):
+def clean_all(file_path="../data/wiki_dump_raw.json", output_path="../data/wiki_dump_cleaned.json"):
     """Очищает все записи и сохраняет обратно"""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"The file {file_path} does not exist.")

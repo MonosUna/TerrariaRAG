@@ -1,10 +1,12 @@
 """
 get_data.py — скрипт для выгрузки данных с Terraria Wiki
-Автор: твой Terraria RAG проект :)
+Автор: nvclon
 
 Использование:
     python data/get_data.py --mode list     # выгрузить список всех страниц
     python data/get_data.py --mode dump     # выгрузить тексты страниц
+    
+LICENSE: blablabla
 """
 
 import requests
@@ -14,12 +16,8 @@ import os
 import argparse
 
 BASE_URL = "https://terraria.wiki.gg/ru/api.php"
-HEADERS = {"User-Agent": "TerrariaRAGBot/0.1 (by YourName)"}
+HEADERS = {"User-Agent": "TerrariaRAGBot/0.1 (by nvclon)"}
 
-
-# ---------------------------------------------
-# 1️⃣ Получение списка всех страниц
-# ---------------------------------------------
 def get_all_pages():
     all_pages = []
     apcontinue = None
@@ -83,7 +81,7 @@ def get_all_pages():
 def dump_page_list():
     os.makedirs("data", exist_ok=True)
     pages = get_all_pages()
-    path = "data/pages_list.json"
+    path = "../data/pages_list.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(pages, f, ensure_ascii=False, indent=2)
     print(f"💾 Список страниц сохранён в {path} ({len(pages)} штук)")
@@ -143,15 +141,15 @@ def dump_all_pages():
     os.makedirs("data", exist_ok=True)
 
     # Загружаем список страниц
-    if not os.path.exists("data/pages_list.json"):
-        print("❌ Не найден data/pages_list.json. Сначала запусти --mode list")
+    if not os.path.exists("../data/pages_list.json"):
+        print("❌ Не найден ../data/pages_list.json. Сначала запусти --mode list")
         return
 
-    with open("data/pages_list.json", "r", encoding="utf-8") as f:
+    with open("../data/pages_list.json", "r", encoding="utf-8") as f:
         pages = json.load(f)
 
     # Загружаем уже скачанные (если есть)
-    dump_path = "data/wiki_dump.json"
+    dump_path = "../data/wiki_dump.json"
     if os.path.exists(dump_path):
         with open(dump_path, "r", encoding="utf-8") as f:
             all_data = json.load(f)
