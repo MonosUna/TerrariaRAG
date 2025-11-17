@@ -61,7 +61,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     terraria_rag = TerrariaRAG(
         api_url=api_url,
         agents=[
-            craft_agent, 
+            craft_agent,
             general_agent
         ]
     )
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         question = (
             "Какой урон у снайперской винтовки?"
         )
-    
+
     terraria_rag = setup_terraria_rag()
     terraria_rag.set_temperature(0.1)
     response = terraria_rag.run(question)
