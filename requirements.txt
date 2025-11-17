@@ -1,7 +1,6 @@
 requests
 tqdm
-beautifulsoup4
 chromadb
 langchain
 python-dotenv
-bs4
+regex
