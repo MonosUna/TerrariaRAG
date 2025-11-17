@@ -26,7 +26,7 @@ def setup_terraria_rag() -> TerrariaRAG:
         mistral_client=Mistral(
             api_key=os.getenv("API_KEY"),
         ),
-        model_name="mistral-small-latest",
+        model_name="ministral-8b-latest",
     )
 
     logger.info("LLM клиент инициализирован.")
@@ -35,7 +35,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     embeddings = HuggingFaceEmbeddings(
         model_name="intfloat/multilingual-e5-large"
     )
-    recipes = json.load(open("../data/data/recipes.json", "r", encoding="utf-8"))
+    recipes = json.load(open("data/data/recipes.json", "r", encoding="utf-8"))
 
     logger.info("Вспомогательные данные загружены.")
     logger.info("Создание агентов...")
@@ -61,7 +61,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     terraria_rag = TerrariaRAG(
         llm_session=client,
         agents=[
-            craft_agent, 
+            craft_agent,
             general_agent
         ]
     )
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         question = (
             "Какой урон у снайперской винтовки?"
         )
-    
+
     terraria_rag = setup_terraria_rag()
     response = terraria_rag.run(question)
     print("=" * 70)
