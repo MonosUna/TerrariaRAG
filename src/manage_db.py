@@ -41,10 +41,26 @@ def create_db(json_path: str,
     print(f"Database created at {persist_directory} with {len(chunks)} chunks.")
     
 def delete_db(persist_directory: str) -> None:
-    vectorstore = Chroma(persist_directory=persist_directory)
-    vectorstore._client.delete_collection(name=vectorstore._collection.name)
-    print(f"Database at {persist_directory} has been deleted.")
+    try:
+        vectorstore = Chroma(persist_directory=persist_directory)
+        vectorstore._client.delete_collection(name=vectorstore._collection.name)
+        print(f"Database at {persist_directory} has been deleted.")
+    except Exception as e:
+        print(f"Failed to delete database at {persist_directory}: {e}")
     
+def update_db(json_path: str, 
+              persist_directory: str, 
+              embedding_model: str = "intfloat/multilingual-e5-large",
+              use_cuda: bool = True,
+              chunk_size: int = 5000,
+              chunk_overlap: int = 1000,
+              min_length: int = 0,
+              separators: list[str] = ["\n\n", "\n", " "],
+              ) -> None:
+    delete_db(persist_directory)
+    create_db(json_path, persist_directory, embedding_model, use_cuda, chunk_size, chunk_overlap, min_length, separators)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage the vector database.")
     parser.add_argument("action", choices=["create", "delete"], help="Action to perform: create or delete the database.")
