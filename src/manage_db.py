@@ -19,7 +19,13 @@ def create_db(json_path: str,
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    inputs = [item for item in data]
+    inputs = []
+    for item in data:
+        if isinstance(item, str):
+            inputs.append(data[item].get('content', ''))
+        else:
+            inputs.append(item.get('content', ''))
+            
     documents = [Document(page_content=text) for text in inputs]
     
     text_splitter = RecursiveCharacterTextSplitter(separators=separators, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -48,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_cuda", action="store_true", help="Whether to use CUDA for embeddings.")
     parser.add_argument("--chunk_size", type=int, default=5000, help="Chunk size for text splitting.")
     parser.add_argument("--chunk_overlap", type=int, default=1000, help="Chunk overlap for text splitting.")
-    parser.add_argument("--min_length", type=int, default=200, help="Minimum length for text chunks.")
+    parser.add_argument("--min_length", type=int, default=0, help="Minimum length for text chunks.")
     parser.add_argument("--separators", type=str, nargs='+', default=["\n\n", "\n", " "], help="List of separators for text splitting.")
     parser.add_argument("--db_path", type=str, help="Path to the database to delete.")
     args = parser.parse_args()
