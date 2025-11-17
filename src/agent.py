@@ -8,6 +8,47 @@ import logging
 
 logger = logging.getLogger('RAG_Agent')
 
+class MistralLLM:
+    """
+    Обертка для клиента Mistral.
+    Сохраняет настройки модели, температуру и историю запросов.
+    """
+
+    def __init__(
+            self,
+            mistral_client: Any,
+            model_name: str = "mistral-small-latest",
+            temperature: float = 0.2):
+
+        self.client = mistral_client
+        self.model_name = model_name
+        self.temperature = temperature
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Вызывает клиент Mistral и возвращает текст ответа модели.
+        """
+        if not self.client:
+            raise ValueError("Mistral client is not set on MistralLLM")
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        resp = self.client.chat.complete(
+            model=self.model_name,
+            messages=messages,
+            temperature=self.temperature
+        )
+        try:
+            return resp.choices[0].message.content
+        except Exception:
+            try:
+                return str(resp)
+            except Exception:
+                raise
+
+
 class QwenLLM:
     """
     Обертка для клиента Qwen.
@@ -15,11 +56,11 @@ class QwenLLM:
     """
 
     def __init__(
-            self, 
+            self,
             api_url: str = "",
-            model_name: str = "qwen-3.0-8b", 
+            model_name: str = "qwen-3.0-8b",
             temperature: float = 0.2):
-        
+
         self.api_url = api_url
         self.model_name = model_name
         self.temperature = temperature
@@ -30,11 +71,11 @@ class QwenLLM:
         """
         if not self.api_url:
             raise ValueError("Provide api_url for QwenLLM client.")
-        
+
         headers = {
             "Content-Type": "application/json"
         }
-        
+
         response = requests.post(
             self.api_url,
             headers=headers,
@@ -44,15 +85,15 @@ class QwenLLM:
                 "stream": False,
                 "options":{
                     "num_ctx":64000
-                    }                
+                    }
                 }
             )
-        
+
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-        
+
         resp = response.json()
-        
+
         try:
             return resp['response']
         except Exception:
@@ -78,7 +119,7 @@ class Agent(abc.ABC):
 
 class CraftAgent(Agent):
     """
-    Специализированный агент, который умеет создавать ответы, 
+    Специализированный агент, который умеет создавать ответы,
     связанные с крафтом предметов.
     """
 
@@ -95,9 +136,9 @@ class CraftAgent(Agent):
     )
 
     def __init__(
-            self, 
+            self,
             name: str,
-            api_url: str, 
+            api_url: str,
             recipes: Any,
             embeddings: Optional[Any] = None,
             max_recipes: int = 5
@@ -108,7 +149,7 @@ class CraftAgent(Agent):
         self.embeddings = embeddings
         self.vectorstore = Chroma(persist_directory="./terraria_db/recipes", embedding_function=self.embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": self.max_recipes})
-    
+
     def _get_recipes_context(self, item_names: List[str]) -> str:
         contexts = []
         for item in item_names:
@@ -124,7 +165,7 @@ class CraftAgent(Agent):
                 else:
                     station = recipe["station"]
                 context += f"- Станция: {station}, Компоненты: {components}\n"
-            
+
             contexts.append(f"Рецепты для {item}:\n{context}\n")
 
         return "\n".join(contexts) if contexts else "Рецепты не найдены."
@@ -146,7 +187,7 @@ class CraftAgent(Agent):
         headers = {
             "Content-Type": "application/json"
         }
-        
+
         response = requests.post(
             self.api_url,
             headers=headers,
@@ -159,12 +200,12 @@ class CraftAgent(Agent):
                     }
                 }
             )
-        
+
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-        
+
         response_text = response.json().get('response', '')
-        
+
         return response_text, docs
 
 
@@ -186,9 +227,9 @@ class GeneralAgent(Agent):
     )
 
     def __init__(
-            self, 
+            self,
             name: str,
-            api_url: str, 
+            api_url: str,
             embeddings: Optional[Any] = None,
             max_docs: int = 5
             ):
@@ -214,7 +255,7 @@ class GeneralAgent(Agent):
         headers = {
             "Content-Type": "application/json"
         }
-        
+
         response = requests.post(
             self.api_url,
             headers=headers,
@@ -227,12 +268,12 @@ class GeneralAgent(Agent):
                     }
                 }
             )
-        
+
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-        
+
         response_text = response.json().get('response', '')
-        
+
         return response_text, docs
 
 
