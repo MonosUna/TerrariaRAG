@@ -74,6 +74,7 @@ if __name__ == "__main__":
         )
     
     terraria_rag = setup_terraria_rag()
+    terraria_rag.set_temperature(0.1)
     response = terraria_rag.run(question)
     print("=" * 70)
     print("Вопрос:", question, "\n")

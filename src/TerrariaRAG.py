@@ -180,7 +180,10 @@ class TerrariaRAG:
             json= {
                 "model":"qwen3:8b",
                 "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-                "stream": False
+                "stream": False,
+                "options":{
+                    "num_ctx":64000
+                    }                
                 }
             )
         
@@ -254,7 +257,10 @@ class TerrariaRAG:
             json= {
                 "model":"qwen3:8b",
                 "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-                "stream": False
+                "stream": False,
+                "options":{
+                    "num_ctx":64000
+                    }                
                 }
             )
         

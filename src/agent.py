@@ -41,7 +41,10 @@ class QwenLLM:
             json= {
                 "model":"qwen3:8b",
                 "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-                "stream": False
+                "stream": False,
+                "options":{
+                    "num_ctx":64000
+                    }                
                 }
             )
         
@@ -150,7 +153,10 @@ class CraftAgent(Agent):
             json= {
                 "model":"qwen3:8b",
                 "prompt":f"{CraftAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
-                "stream": False
+                "stream": False,
+                "options":{
+                    "num_ctx":64000
+                    }
                 }
             )
         
@@ -199,7 +205,9 @@ class GeneralAgent(Agent):
         - Передаёт эти документы в пропмт LLM для генерации ответа
         """
         docs = self.retriever._get_relevant_documents(query, run_manager=None)
-
+        for doc in docs:
+            print("-"*100)
+            print(doc)
         context = "\n".join([d.page_content for d in docs]) if docs else "Документы не найдены."
         # logger.info(f"GeneralAgent контекст для запроса '{query}': \n{context}\n")
 
@@ -213,7 +221,10 @@ class GeneralAgent(Agent):
             json= {
                 "model":"qwen3:8b",
                 "prompt":f"{GeneralAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
-                "stream": False
+                "stream": False,
+                "options":{
+                    "num_ctx": 64000
+                    }
                 }
             )
         
