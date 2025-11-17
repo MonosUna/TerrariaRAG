@@ -1,14 +1,20 @@
 import logging
-from TerrariaRAG import TerrariaRAG
-
-from agent import QwenLLM, CraftAgent, GeneralAgent
-from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
-from logging_config import setup_logging
-
-import os
 import json
 import warnings
+
+from dotenv import load_dotenv
+from langchain_huggingface import HuggingFaceEmbeddings
+
+try:
+    # Импорт при использовании пакета src (например, uvicorn src.api:app)
+    from .TerrariaRAG import TerrariaRAG
+    from .agent import CraftAgent, GeneralAgent
+    from .logging_config import setup_logging
+except ImportError:
+    # Импорт при прямом запуске файла (python src/main.py)
+    from TerrariaRAG import TerrariaRAG
+    from agent import CraftAgent, GeneralAgent
+    from logging_config import setup_logging
 
 
 warnings.filterwarnings("ignore")

@@ -2,5 +2,15 @@ requests
 tqdm
 chromadb
 langchain
+langchain-community
+langchain-huggingface
+langchain-text-splitters
+langchain-chroma
 python-dotenv
+regex
+fastapi
+uvicorn[standard]
+mistralai
+sentence-transformers
+bs4
 regex

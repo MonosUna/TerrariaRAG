@@ -173,18 +173,18 @@ class TerrariaRAG:
         headers = {
             "Content-Type": "application/json"
         }
-        
+        json = {
+            "model":"qwen3:8b",
+            "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
+            "stream": False,
+            "options":{
+                "num_ctx":64000
+                }                
+            }
         response = requests.post(
             self.api_url,
             headers=headers,
-            json= {
-                "model":"qwen3:8b",
-                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-                "stream": False,
-                "options":{
-                    "num_ctx":64000
-                    }                
-                }
+            json=json
             )
         
         if response.status_code != 200:
@@ -250,7 +250,6 @@ class TerrariaRAG:
         headers = {
             "Content-Type": "application/json"
         }
-        
         response = requests.post(
             self.api_url,
             headers=headers,
