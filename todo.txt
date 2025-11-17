@@ -262,3 +262,9 @@ collapse top
 
 '''В нейтральном состоянии:'''
 * ""
+
+
+
+python .\src\manage_db.py create --persist_directory .\terraria_db\general --json_path .\data\data\wiki_dump_cleaned.json --use_cuda --min_length 200
+python .\src\manage_db.py create --persist_directory .\terraria_db\recipes --json_path .\data\data\recipes.json --use_cuda --min_length 0
+python .\src\main.py

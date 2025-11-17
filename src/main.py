@@ -29,7 +29,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     embeddings = HuggingFaceEmbeddings(
         model_name="intfloat/multilingual-e5-large"
     )
-    recipes = json.load(open("../data/data/recipes.json", "r", encoding="utf-8"))
+    recipes = json.load(open("data/data/recipes.json", "r", encoding="utf-8"))
 
     logger.info("Вспомогательные данные загружены.")
     logger.info("Создание агентов...")
