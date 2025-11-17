@@ -13,7 +13,7 @@ def create_db(json_path: str,
               use_cuda: bool = True,
               chunk_size: int = 5000,
               chunk_overlap: int = 1000,
-              min_length: int = 200,
+              min_length: int = 0,
               separators: list[str] = ["\n\n", "\n", " "],
               ) -> None:
     with open(json_path, 'r', encoding='utf-8') as f:
