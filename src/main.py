@@ -1,8 +1,7 @@
 import logging
 from TerrariaRAG import TerrariaRAG
 
-from agent import MistralLLM, CraftAgent, GeneralAgent
-from mistralai import Mistral
+from agent import QwenLLM, CraftAgent, GeneralAgent
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from logging_config import setup_logging
@@ -22,12 +21,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     logger.info("Загрузка TerrariaRAG...")
     logger.info("Инициализация LLM клиента...")
 
-    client = MistralLLM(
-        mistral_client=Mistral(
-            api_key=os.getenv("API_KEY"),
-        ),
-        model_name="mistral-small-latest",
-    )
+    api_url = "http://192.168.68.111:8000/api/generate"
 
     logger.info("LLM клиент инициализирован.")
     logger.info("Загрузка вспомогательных данных...")
@@ -42,7 +36,7 @@ def setup_terraria_rag() -> TerrariaRAG:
 
     craft_agent = CraftAgent(
         name="CraftAgent",
-        llm_session=client,
+        api_url=api_url,
         recipes=recipes,
         embeddings=embeddings,
         max_recipes=24
@@ -50,7 +44,7 @@ def setup_terraria_rag() -> TerrariaRAG:
 
     general_agent = GeneralAgent(
         name="GeneralAgent",
-        llm_session=client,
+        api_url=api_url,
         embeddings=embeddings,
         max_docs=8
     )
@@ -59,7 +53,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     logger.info("Создание TerrariaRAG...")
 
     terraria_rag = TerrariaRAG(
-        llm_session=client,
+        api_url=api_url,
         agents=[
             craft_agent, 
             general_agent

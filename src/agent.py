@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from langchain_community.vectorstores import Chroma
+import requests
 
 import abc
 import logging
@@ -7,40 +8,50 @@ import logging
 
 logger = logging.getLogger('RAG_Agent')
 
-class MistralLLM:
+class QwenLLM:
     """
-    Обертка для клиента Mistral.
+    Обертка для клиента Qwen.
     Сохраняет настройки модели, температуру и историю запросов.
     """
 
     def __init__(
             self, 
-            mistral_client: Any, 
-            model_name: str = "mistral-small-latest", 
+            api_url: str = "",
+            model_name: str = "qwen-3.0-8b", 
             temperature: float = 0.2):
         
-        self.client = mistral_client
+        self.api_url = api_url
         self.model_name = model_name
         self.temperature = temperature
 
     def call(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Вызывает клиент Mistral и возвращает текст ответа модели.
+        Вызывает клиент Qwen и возвращает текст ответа модели.
         """
-        if not self.client:
-            raise ValueError("Mistral client is not set on MistralLLM")
-
-        messages = [
-            {"role": "system", "content": system_prompt}, 
-            {"role": "user", "content": user_prompt}
-        ]
-        resp = self.client.chat.complete(
-            model=self.model_name, 
-            messages=messages, 
-            temperature=self.temperature
-        )
+        if not self.api_url:
+            raise ValueError("Provide api_url for QwenLLM client.")
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            self.api_url,
+            headers=headers,
+            json= {
+                "model":"qwen3:8b",
+                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
+                "stream": False
+                }
+            )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
+        
+        resp = response.json()
+        
         try:
-            return resp.choices[0].message.content
+            return resp['response']
         except Exception:
             try:
                 return str(resp)
@@ -53,9 +64,9 @@ class Agent(abc.ABC):
     Абстрактный класс для Агента
     """
 
-    def __init__(self, name: str, llm_session: Any):
+    def __init__(self, name: str, api_url: str):
         self.name = name
-        self.llm_session = llm_session
+        self.api_url = api_url
 
     @abc.abstractmethod
     def call(self, query: str, **kwargs) -> Dict[str, Any]:
@@ -83,12 +94,12 @@ class CraftAgent(Agent):
     def __init__(
             self, 
             name: str,
-            llm_session: Any, 
+            api_url: str, 
             recipes: Any,
             embeddings: Optional[Any] = None,
             max_recipes: int = 5
             ):
-        super().__init__(name, llm_session)
+        super().__init__(name, api_url)
         self.recipes = recipes
         self.max_recipes = max_recipes
         self.embeddings = embeddings
@@ -129,10 +140,25 @@ class CraftAgent(Agent):
         context = self._get_recipes_context(item_names.split("\n"))
         # logger.info(f"CraftAgent контекст для запроса '{query}': \n{context}\n")
 
-        response_text = self.llm_session.call(
-            system_prompt=CraftAgent.SYSTEM_PROMPT,
-            user_prompt=CraftAgent.USER_PROMPT.format(context=context, query=query)
-        )
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            self.api_url,
+            headers=headers,
+            json= {
+                "model":"qwen3:8b",
+                "prompt":f"{CraftAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
+                "stream": False
+                }
+            )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
+        
+        response_text = response.json().get('response', '')
+        
         return response_text, docs
 
 
@@ -156,11 +182,11 @@ class GeneralAgent(Agent):
     def __init__(
             self, 
             name: str,
-            llm_session: Any, 
+            api_url: str, 
             embeddings: Optional[Any] = None,
             max_docs: int = 5
             ):
-        super().__init__(name, llm_session)
+        super().__init__(name, api_url)
         self.max_docs = max_docs
         self.embeddings = embeddings
         self.vectorstore = Chroma(persist_directory="./terraria_db/general", embedding_function=self.embeddings)
@@ -177,11 +203,26 @@ class GeneralAgent(Agent):
         context = "\n".join([d.page_content for d in docs]) if docs else "Документы не найдены."
         # logger.info(f"GeneralAgent контекст для запроса '{query}': \n{context}\n")
 
-        response_text = self.llm_session.call(
-            system_prompt=GeneralAgent.SYSTEM_PROMPT,
-            user_prompt=GeneralAgent.USER_PROMPT.format(context=context, query=query)
-        )
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            self.api_url,
+            headers=headers,
+            json= {
+                "model":"qwen3:8b",
+                "prompt":f"{GeneralAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
+                "stream": False
+                }
+            )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
+        
+        response_text = response.json().get('response', '')
+        
         return response_text, docs
 
 
-__all__ = ["MistralLLM", "Agent", "CraftAgent", "GeneralAgent"]
+__all__ = ["QwenLLM", "Agent", "CraftAgent", "GeneralAgent"]

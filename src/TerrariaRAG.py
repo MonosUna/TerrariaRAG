@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from typing import Any
 
+import requests
 import logging
 
 logger = logging.getLogger('RAG_TerrariaRAG')
@@ -143,10 +144,10 @@ class TerrariaRAG:
 
     def __init__(
             self,
-            llm_session: Any,
+            api_url: Any,
             agents: list,
             ):
-        self.llm_session = llm_session
+        self.api_url = api_url
         self.agents = agents
         self.message_history = []
         self.set_api_key()
@@ -169,10 +170,24 @@ class TerrariaRAG:
         system_prompt = self.SYSTEM_PROMPT__REDIRECT_TO_AGENTS
         user_prompt = "Запрос пользователя: {query}".format(query=query)
         
-        response = self.llm_session.call(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt
-        )
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            self.api_url,
+            headers=headers,
+            json= {
+                "model":"qwen3:8b",
+                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
+                "stream": False
+                }
+            )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
+        
+        response = response.json().get('response', '')
         
         # Парсинг ответа для получения списка агентов и вопросов
 
@@ -229,10 +244,24 @@ class TerrariaRAG:
         system_prompt = self.SYSTEM_PROMPT__SUMMARIZE_ANSWERS
         user_prompt = "Входные данные: {responses}".format(responses=agents_responses)
 
-        final_answer = self.llm_session.call(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt
-        )
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            self.api_url,
+            headers=headers,
+            json= {
+                "model":"qwen3:8b",
+                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
+                "stream": False
+                }
+            )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
+        
+        final_answer = response.json().get('response', '')
         return final_answer
     
     def run(self, query: str) -> str:
