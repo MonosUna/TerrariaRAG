@@ -513,14 +513,29 @@ def convert_wiki_tables(text: str) -> str:
 
 def my_handler(name, args):
     name_l = name.lower()
-    bad_words_0 = ["automatic translation", "reflist", "legacy nav tab"]
+    bad_words_0 = ["automatic translation", "reflist", "legacy nav tab", "collapse top", "legacy nav tab"]
     if len(args) == 0:
         if name_l in bad_words_0:
             return ""
         if name_l == "na":
             return "not available"
         return name
-
+    
+    if name_l == "chance":
+        return f"шанс {', '.join(args)}"
+    
+    if name_l == "exclusive":
+        return f"(исключительно {', '.join(args)}!)"
+    
+    if name_l == "expert":
+        return f"в эксперте {', '.join(args)})"
+    
+    if name_l == "master":
+        return f"в мастере {', '.join(args)})"
+    
+    if name_l == "note":
+        return args[-1] if args else ""
+    
     if name_l == "item infobox":
         return f"(Параметры предмета: {', '.join(args)})"
 
@@ -577,9 +592,6 @@ def remove_wiki_tags(text: str) -> str:
     text = re.sub(r"<.*?>", "", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"</.*?>", "", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"<.*?/>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<noinclude>.*?</noinclude>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<includeonly>.*?</includeonly>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<onlyinclude>.*?</onlyinclude>", "", text, flags=re.DOTALL | re.IGNORECASE)
     return text
 
 def delete_everything_after_section(text: str, section_title: str) -> str:
