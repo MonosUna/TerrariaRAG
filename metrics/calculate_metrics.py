@@ -81,8 +81,7 @@ def evaluate_answer(eval_client, question, groundtruth, my_answer, baseline_answ
 
 {
     "rag_score": int,      # 0–5
-    "baseline_score": int,      # 0–5
-    "comment": "text"
+    "baseline_score": int  # 0–5
 }
 """
 
@@ -181,8 +180,7 @@ def calculate_metrics():
             logger.error(f"Evaluation error: {e}")
             eval_result = {
                 "rag_score": 0,
-                "baseline_score": 0,
-                "comment": str(e)
+                "baseline_score": 0
             }
 
         # Добавляем новый результат
@@ -198,20 +196,20 @@ def calculate_metrics():
 
         # Сохраняем после каждого вопроса
         save_results(results)
-        logger.info(f"✅ Сохранен результат для вопроса {i+1}/{len(questions)}")
+        logger.info(f"Сохранен результат для вопроса {i+1}/{len(questions)}")
 
-    logger.info("🎉 Все метрики вычислены! Финальный результат в metrics/out/results.json")
+    logger.info("🎉 Все метрики вычислены! Финальный результат в metrics/out/model_evaluation.json")
 
 def load_existing_results():
     """Загружает существующие результаты если они есть"""
     os.makedirs("metrics/out", exist_ok=True)
-    results_file = "metrics/out/results.json"
+    results_file = "metrics/out/model_evaluation.json"
 
     if os.path.exists(results_file):
         try:
             with open(results_file, "r", encoding="utf-8") as f:
                 results = json.load(f)
-            logger.info(f"📁 Загружено {len(results)} предыдущих результатов")
+            logger.info(f"Загружено {len(results)} предыдущих результатов")
             return results
         except Exception as e:
             logger.warning(f"Не удалось загрузить предыдущие результаты: {e}")
@@ -221,20 +219,18 @@ def load_existing_results():
 def save_results(results):
     """Сохраняет результаты в файл"""
     os.makedirs("metrics/out", exist_ok=True)
-    results_file = "metrics/out/results.json"
+    results_file = "metrics/out/model_evaluation.json"
 
     try:
-        # Создаем временный файл для атомарной записи
         temp_file = results_file + ".tmp"
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
 
-        # Перемещаем временный файл в основной
         os.replace(temp_file, results_file)
-        logger.debug(f"💾 Результаты сохранены ({len(results)} записей)")
+        logger.debug(f"Результаты сохранены ({len(results)} записей)")
 
     except Exception as e:
-        logger.error(f"❌ Ошибка сохранения результатов: {e}")
+        logger.error(f"Ошибка сохранения результатов: {e}")
 
 if __name__ == "__main__":
     calculate_metrics()
