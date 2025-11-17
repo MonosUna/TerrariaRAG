@@ -26,7 +26,7 @@ def setup_terraria_rag() -> TerrariaRAG:
         mistral_client=Mistral(
             api_key=os.getenv("API_KEY"),
         ),
-        model_name="mistral-small-latest",
+        model_name="ministral-8b-latest",
     )
 
     logger.info("LLM клиент инициализирован.")
@@ -61,7 +61,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     terraria_rag = TerrariaRAG(
         llm_session=client,
         agents=[
-            craft_agent, 
+            craft_agent,
             general_agent
         ]
     )
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             "Что такое молниеносные ботинки, зачем они нужны и как их создать? "
             "А ещё как получить искромётные морозные ботинки?"
         )
-    
+
     terraria_rag = setup_terraria_rag()
     response = terraria_rag.run(question)
     print("=" * 70)
