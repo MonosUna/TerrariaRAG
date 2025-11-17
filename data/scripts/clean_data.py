@@ -660,7 +660,7 @@ def clean_entry(entry: dict) -> dict:
     content = process_templates(content, my_handler)
     content = change_templates(content)
     content = remove_wiki_tags(content)
-    content = delete_useless_headers(content)
+    #content = delete_useless_headers(content)
     content = delete_everything_after_section(content, "Сноски")
 
     # Убираем лишние пробелы и пустые строки
