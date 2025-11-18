@@ -152,6 +152,7 @@ def calculate_metrics():
         q = item["question"]
         theme = item.get("theme", "")
         gt = item["groundtruth"]
+        complexity = item["complexity"]
 
         # Пропускаем уже обработанные вопросы
         if q in processed_questions:
@@ -183,22 +184,21 @@ def calculate_metrics():
                 "baseline_score": 0
             }
 
-        # Добавляем новый результат
         new_result = {
             "question": q,
             "theme": theme,
             "groundtruth": gt,
+            "complexity": complexity,
             "my_model_answer": my_answer,
             "baseline_answer": baseline_answer,
             "evaluation": eval_result
         }
         results.append(new_result)
 
-        # Сохраняем после каждого вопроса
         save_results(results)
         logger.info(f"Сохранен результат для вопроса {i+1}/{len(questions)}")
 
-    logger.info("🎉 Все метрики вычислены! Финальный результат в metrics/out/model_evaluation.json")
+    logger.info("Все метрики вычислены! Финальный результат в metrics/out/model_evaluation.json")
 
 def load_existing_results():
     """Загружает существующие результаты если они есть"""
