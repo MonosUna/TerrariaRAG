@@ -3,6 +3,9 @@ import os
 import re
 import regex
 
+with open("data/data/recipes_new.json", "r", encoding="utf-8") as f:
+    recipes = json.load(f)
+
 def remove_accent_chars(text: str) -> str:
     """Удаляет символы ударения"""
     return re.sub(r'\u0301', '', text)
@@ -511,16 +514,41 @@ def convert_wiki_tables(text: str) -> str:
     out_parts.append(text[last:])
     return "".join(out_parts)
 
+def format_recipe(recipe):
+    components_text = "\n".join(
+        f"- {qty} {name}" for name, qty in recipe["components"].items()
+    )
+    station = recipe.get("station", "Неизвестно")
+    amount = recipe.get("amount", 1)
+
+    return f"(Рецепт: / {components_text} / cоздаётся на: {station} / выход: {amount} шт.)"
+
+
 def my_handler(name, args):
     name_l = name.lower()
-    bad_words_0 = ["automatic translation", "reflist", "legacy nav tab"]
+    bad_words_0 = ["automatic translation", "reflist", "legacy nav tab", "collapse top", "legacy nav tab"]
     if len(args) == 0:
         if name_l in bad_words_0:
             return ""
         if name_l == "na":
             return "not available"
         return name
-
+    
+    if name_l == "chance":
+        return f"шанс {', '.join(args)}"
+    
+    if name_l == "exclusive":
+        return f"(исключительно {', '.join(args)}!)"
+    
+    if name_l == "expert":
+        return f"в эксперте {', '.join(args)})"
+    
+    if name_l == "master":
+        return f"в мастере {', '.join(args)})"
+    
+    if name_l == "note":
+        return args[-1] if args else ""
+    
     if name_l == "item infobox":
         return f"(Параметры предмета: {', '.join(args)})"
 
@@ -530,11 +558,45 @@ def my_handler(name, args):
     if name_l == "buff infobox":
         return f"(Параметры баффа: {', '.join(args)})"
 
-    if name_l in ("recipes", "recipes/register"):
-        if args and "expectedrows" in args[-1]:
+    if name_l == "recipes/register":
+        return ""
+    
+    if name_l == "duration":
+        if len(args[0].split("="))>=2:
+            return args[0].split("=")[1]
+        return args[0]
+    
+    if name_l == "recipes":
+        if len(args) == 2:
+            action = args[0].split('=', 1)[0].strip()
+            recipe_names = args[0].split('=', 1)[1].strip().split('/')
+            if len(recipe_names) >= 2:
+                print(recipe_names)
+            recipe_names = [name.strip() for name in recipe_names]
+        else:
             return ""
-        return f"(Рецепт: {', '.join(args)})"
-
+        if action == "result":
+            text = ""
+            for recipe_name in recipe_names:
+                try:
+                    for recipe in recipes[recipe_name]['recipes']:
+                        text += format_recipe(recipe)
+                except:
+                    pass
+            return text
+        if action == "ingredient":
+            text = ""
+            for recipe_name in recipe_names:
+                for item in recipes:
+                    try:
+                        for recipe in recipes[item]['recipes']:
+                            if recipe_name in recipe['components'].keys():
+                                text += format_recipe(recipe)
+                    except:
+                        pass
+            return text
+        return ""
+        
     if name_l == "achievement":
         return f"(Достижение: {', '.join(args)})"
 
@@ -577,9 +639,6 @@ def remove_wiki_tags(text: str) -> str:
     text = re.sub(r"<.*?>", "", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"</.*?>", "", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"<.*?/>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<noinclude>.*?</noinclude>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<includeonly>.*?</includeonly>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<onlyinclude>.*?</onlyinclude>", "", text, flags=re.DOTALL | re.IGNORECASE)
     return text
 
 def delete_everything_after_section(text: str, section_title: str) -> str:
@@ -601,11 +660,15 @@ def clean_entry(entry: dict) -> dict:
     content = process_templates(content, my_handler)
     content = change_templates(content)
     content = remove_wiki_tags(content)
-    content = delete_useless_headers(content)
+    #content = delete_useless_headers(content)
     content = delete_everything_after_section(content, "Сноски")
 
     # Убираем лишние пробелы и пустые строки
-    #content = re.sub(r"\n\s*\n+", "\n", content)
+    while True:
+        length = len(content)
+        content = re.sub(r"\n\n", "\n", content)
+        if length == len(content):
+            break
     #content = re.sub(r"[ \t]{2,}", " ", content)
     content = content.strip()
 
@@ -613,7 +676,7 @@ def clean_entry(entry: dict) -> dict:
     return entry
 
 
-def clean_all(file_path="../data/wiki_dump_raw.json", output_path="../data/wiki_dump_cleaned.json"):
+def clean_all(file_path="data/data/wiki_dump_raw.json", output_path="data/data/wiki_dump_cleaned.json"):
     """Очищает все записи и сохраняет обратно"""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"The file {file_path} does not exist.")
