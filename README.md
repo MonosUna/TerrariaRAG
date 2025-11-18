@@ -72,6 +72,15 @@ TerrariaRAG использует многоагентную архитектур
 
 ---
 
+# Сборка контейнера и запуск через API
+
+```
+docker build -f docker/Dockerfile -t terraria-rag .
+# запуск
+docker run --gpus all --rm -p [порт API]:8000 -v terraria_rag_db:/app/terraria_db terraria-rag
+```
+
+
 # Установка
 
 ## 1. Установить зависимости
@@ -196,10 +205,9 @@ PR-ы приветствуются, особенно:
 * [nvclon](https://github.com/nvclon)
 * [georgens2004](https://github.com/georgens2004)
 * [MonosUna](https://github.com/MonosUna)
-* [добавить]
+* [VirusTI](https://github.com/VirusTI)
 * [добавить]
 
 # 📄 Лицензия
 
 MIT License.
-
