@@ -15,10 +15,6 @@ def analyze_scores(results):
     baseline_scores = []
     complexity_dict = defaultdict(list)
 
-    better_rag = 0
-    better_baseline = 0
-    tie = 0
-
     for item in results:
         eval_data = item.get("evaluation", {})
         rag = eval_data.get("rag_score", 0)
@@ -29,52 +25,54 @@ def analyze_scores(results):
         baseline_scores.append(base)
         complexity_dict[complexity].append((rag, base))
 
-        if rag > base:
-            better_rag += 1
-        elif rag < base:
-            better_baseline += 1
+    # Подсчёт количеств
+    counts = {
+        "all": len(results),
+        "easy": len(complexity_dict.get("easy", [])),
+        "medium": len(complexity_dict.get("medium", [])),
+        "hard": len(complexity_dict.get("hard", [])),
+    }
+
+    # Средние значения
+    stats = {"all": (
+        np.mean(rag_scores) if rag_scores else 0,
+        np.mean(baseline_scores) if baseline_scores else 0
+    )}
+
+    for level in ["easy", "medium", "hard"]:
+        pairs = complexity_dict.get(level, [])
+        if pairs:
+            rag = [r for r, _ in pairs]
+            base = [b for _, b in pairs]
+            stats[level] = (np.mean(rag), np.mean(base))
         else:
-            tie += 1
+            stats[level] = (0, 0)
 
-    print("Общее количество вопросов:", len(results))
-    print("RAG > baseline:", better_rag)
-    print("RAG < baseline:", better_baseline)
-    print("Tie:", tie)
-    print("Средний RAG score:", np.mean(rag_scores))
-    print("Средний baseline score:", np.mean(baseline_scores))
-    print()
+    return stats, counts
 
-    for level, scores in complexity_dict.items():
-        rag_avg = np.mean([r for r, b in scores])
-        base_avg = np.mean([b for r, b in scores])
-        print(f"Сложность {level}: средний RAG={rag_avg:.3f}, baseline={base_avg:.3f}")
-
-    return rag_scores, baseline_scores, complexity_dict
-
-def plot_histograms(rag_scores, baseline_scores, complexity_dict, out_dir):
-
+def plot_grouped_bars(stats, counts, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
-    plt.figure(figsize=(12,5))
-    plt.hist([rag_scores, baseline_scores], bins=20, label=["RAG", "Baseline"], alpha=0.7)
-    plt.xlabel("Score")
-    plt.ylabel("Number of questions")
-    plt.title("Распределение оценок по всем вопросам")
-    plt.legend()
-    plt.savefig(os.path.join(out_dir, "hist_scores_all.png"))
-    plt.close()
+    categories = ["all", "easy", "medium", "hard"]
+    rag_means = [stats[c][0] for c in categories]
+    base_means = [stats[c][1] for c in categories]
 
-    for level, scores in complexity_dict.items():
-        rag = [r for r, b in scores]
-        base = [b for r, b in scores]
-        plt.figure(figsize=(8,4))
-        plt.hist([rag, base], bins=20, label=["RAG", "Baseline"], alpha=0.7)
-        plt.xlabel("Score")
-        plt.ylabel("Number of questions")
-        plt.title(f"Распределение оценок по сложности: {level}")
-        plt.legend()
-        plt.savefig(os.path.join(out_dir, f"hist_scores_{level}.png"))
-        plt.close()
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(x - width/2, rag_means, width, label="RAG")
+    plt.bar(x + width/2, base_means, width, label="Baseline")
+
+    plt.xticks(x, [f"{cat}\n(n={counts[cat]})" for cat in categories])
+    plt.ylabel("Average Score")
+    plt.title("Средние значения RAG vs Baseline по уровням сложности")
+    plt.legend()
+
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "grouped_barchart.png"))
+    plt.close()
 
 def main():
     if len(sys.argv) < 2:
@@ -87,11 +85,18 @@ def main():
         sys.exit(1)
 
     results = load_results(file_path)
-    rag_scores, baseline_scores, complexity_dict = analyze_scores(results)
+
+    stats, counts = analyze_scores(results)
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     out_dir = os.path.join(os.path.dirname(file_path), base_name)
-    plot_histograms(rag_scores, baseline_scores, complexity_dict, out_dir)
+
+    plot_grouped_bars(stats, counts, out_dir)
+
+    print("График сохранён в:", out_dir)
+    print("\nКоличество вопросов по уровню сложности:")
+    for k, v in counts.items():
+        print(f"{k}: {v}")
 
 if __name__ == "__main__":
     main()

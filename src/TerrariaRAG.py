@@ -26,7 +26,7 @@ GENERAL_AGENT_DESCRIPTION = (
 class TerrariaRAG:
 
     QUESTION_EXAMPLE = """
-    Привет! Расскажи о грани ночи. 
+    Привет! Расскажи о грани ночи.
     Какие материалы нужны для его крафта и как он используется в игре?
     """
 
@@ -84,7 +84,7 @@ class TerrariaRAG:
     6. Для каждого крафта должен быть отдельный запрос к CraftAgent!
 
     Доступные агенты:
-    
+
     1. Имя: CraftAgent. Описание: {CRAFT_AGENT_DESCRIPTION}
        Для CraftAgent переформулированный вопрос должен содержать только названия предметов, которые связаны с крафтом.
     2. Имя: GeneralAgent. Описание: {GENERAL_AGENT_DESCRIPTION}
@@ -92,7 +92,7 @@ class TerrariaRAG:
 
     Пример запроса:
     {QUESTION_EXAMPLE}
-    
+
     Пример ответа:
     {REDIRECT_TO_AGENTS_ANSWER_EXAMPLE}
 
@@ -114,9 +114,9 @@ class TerrariaRAG:
             ...
         ]
     }
-    
+
     """
-    
+
     SYSTEM_PROMPT__REDIRECT_TO_AGENTS = """
     Ты — интеллектуальный ассистент по игре Terraria.
     Пользователь задаёт вопрос, связанный с разными аспектами игры.
@@ -130,13 +130,13 @@ class TerrariaRAG:
     3. Верни результат в формате JSON
 
     Доступные агенты:
-    
+
     1. Имя: GeneralAgent. Описание: {GENERAL_AGENT_DESCRIPTION}
        GeneralAgent должен получать вопросы, которые не покрываются специализацией других агентов.
 
     Пример запроса:
     {QUESTION_EXAMPLE}
-    
+
     Пример ответа:
     {REDIRECT_TO_AGENTS_ANSWER_EXAMPLE}
 
@@ -158,7 +158,7 @@ class TerrariaRAG:
             ...
         ]
     }
-    
+
     """
 
     SYSTEM_PROMPT__SUMMARIZE_ANSWERS = """
@@ -172,9 +172,9 @@ class TerrariaRAG:
     1. Прочитать ответы агентов
     2. Сформулировать единый, полный и связный ответ на исходный вопрос пользователя
     3. Если тебе не хватает данных от агентов для точного и информативного ответа на вопрос, то не давая ложной информации, просто напиши, что не информации не хватает.
-    4. В ответе не упоминай ничего о других агентах, отвечай на начальный вопрос пользователя.
+    4. В ответе не упоминай ничего о других агентах и данных тебе документах. Отвечай как будто сам отвечаешь на начальный вопрос.
     5. Отвечай на начальный вопрос, не придумывая новой информации
-    
+
     Пример вопроса пользователя:
     {QUESTION_EXAMPLE}
 
@@ -195,25 +195,25 @@ class TerrariaRAG:
         self.agents = agents
         self.message_history = []
         self.set_api_key()
-        
+
     def set_temperature(self, temperature):
         if not (0.0 <= temperature <= 1.0):
             raise ValueError("Temperature must be between 0.0 and 1.0")
         self.temperature = temperature
-        
+
     def set_api_key(self):
         load_dotenv()
         self.api_key = os.getenv("API_KEY")
         if not self.api_key:
             raise ValueError("API_KEY not found in environment variables.")
-    
+
     def _get_reformulated_questions(self, query):
         """
         Получает переформулированные вопросы для каждого агента.
         """
         system_prompt = self.SYSTEM_PROMPT__REDIRECT_TO_AGENTS
         user_prompt = "Запрос пользователя: {query}".format(query=query)
-        
+
         headers = {
             "Content-Type": "application/json"
         }
@@ -223,19 +223,19 @@ class TerrariaRAG:
             "stream": False,
             "options":{
                 "num_ctx":64000
-                }                
+                }
             }
         response = requests.post(
             self.api_url,
             headers=headers,
             json=json
             )
-        
+
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-        
+
         response = response.json().get('response', '')
-        
+
         # Парсинг ответа для получения списка агентов и вопросов
 
         start = response.find('{')
@@ -257,7 +257,7 @@ class TerrariaRAG:
                     "reformulated_question": query
                 }
             ]
-        
+
         return agent_requests
 
     def _get_agents_responses(self, agent_requests):
@@ -265,12 +265,12 @@ class TerrariaRAG:
         Получает ответы от всех агентов на переформулированные вопросы.
         """
         agent_responses = []
-        
+
         # Шаг 2: Вызов каждого агента с переформулированным вопросом
         for agent_request in agent_requests:
             agent_name = agent_request["name"]
             reformulated_question = agent_request["reformulated_question"]
-            
+
             # Поиск агента по имени
             agent = next((a for a in self.agents if a.name == agent_name), None)
             if agent:
@@ -280,9 +280,9 @@ class TerrariaRAG:
                 }
                 agent_responses.append(agent_response)
 
-        
+
         return agent_responses
-    
+
     def _build_final_answer(self, agents_responses, query):
         """
         Строит окончательный ответ на основе ответов агентов.
@@ -303,26 +303,26 @@ class TerrariaRAG:
                 "stream": False,
                 "options":{
                     "num_ctx":64000
-                    }                
+                    }
                 }
             )
-        
+
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-        
+
         final_answer = response.json().get('response', '')
         return final_answer
-    
+
     def run(self, query: str) -> str:
         """
         Основной метод для генерации ответа на пользовательский запрос.
         """
-        logger.info(f"Запрос пользователя: \n{query}\n" + "=" * 50)
+        # logger.info(f"Запрос пользователя: \n{query}\n" + "=" * 50)
         agent_requests = self._get_reformulated_questions(query)
-        logger.info(f"Переформулированные вопросы агентам: \n{agent_requests}\n" + "=" * 40)
+        # logger.info(f"Переформулированные вопросы агентам: \n{agent_requests}\n" + "=" * 40)
         agents_responses = self._get_agents_responses(agent_requests)
         agents_responses_with_query = [{"Query": query}] + agents_responses
-        logger.info(f"Ответы агентов: ")
+        # logger.info(f"Ответы агентов: ")
         for response in agents_responses_with_query:
             if response.get("Query") is not None:
                 continue

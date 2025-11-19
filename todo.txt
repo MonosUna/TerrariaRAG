@@ -265,7 +265,11 @@ collapse top
 * ""
 
 
+python .\src\manage_db.py delete --persist_directory .\terraria_db\general
+python .\src\manage_db.py delete --persist_directory .\terraria_db\recipes
+python .\src\manage_db.py create --persist_directory .\terraria_db\general --json_path .\data\data\wiki_dump_cleaned.json --min_length 200
+python .\src\manage_db.py update --persist_directory .\terraria_db\general --json_path .\data\data\wiki_dump_cleaned.json --min_length 200
+python .\src\manage_db.py create --persist_directory .\terraria_db\recipes --json_path .\data\data\recipes.json --min_length 0
+python .\src\manage_db.py update --persist_directory .\terraria_db\recipes --json_path .\data\data\recipes.json --min_length 0
 
-python .\src\manage_db.py create --persist_directory .\terraria_db\general --json_path .\data\data\wiki_dump_cleaned.json --use_cuda --min_length 200
-python .\src\manage_db.py create --persist_directory .\terraria_db\recipes --json_path .\data\data\recipes.json --use_cuda --min_length 0
 python .\src\main.py
