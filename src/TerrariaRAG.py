@@ -173,7 +173,7 @@ class TerrariaRAG:
     2. Сформулировать единый, полный и связный ответ на исходный вопрос пользователя
     3. Если тебе не хватает данных от агентов для точного и информативного ответа на вопрос, то не давая ложной информации, просто напиши, что не информации не хватает.
     4. В ответе не упоминай ничего о других агентах и данных тебе документах. Отвечай как будто сам отвечаешь на начальный вопрос.
-    5. Отвечай на поставленный вопрос, не придумывая новой информации
+    5. Отвечай на начальный вопрос, не придумывая новой информации
 
     Пример вопроса пользователя:
     {QUESTION_EXAMPLE}
@@ -283,13 +283,13 @@ class TerrariaRAG:
 
         return agent_responses
 
-    def _build_final_answer(self, agents_responses):
+    def _build_final_answer(self, agents_responses, query):
         """
         Строит окончательный ответ на основе ответов агентов.
         Учитывает специализацию каждого агента.
         """
         system_prompt = self.SYSTEM_PROMPT__SUMMARIZE_ANSWERS
-        user_prompt = "Входные данные: {responses}".format(responses=agents_responses)
+        user_prompt = "Входные данные: {responses}\n\nНачальный вопрос пользователя: {query}".format(responses=agents_responses, query=query)
 
         headers = {
             "Content-Type": "application/json"
@@ -326,7 +326,7 @@ class TerrariaRAG:
         for response in agents_responses_with_query:
             if response.get("Query") is not None:
                 continue
-            # for agent_name, answer in response.items():
-            #     logger.info(f"{agent_name} ответил: \n{answer}\n")
-        final_answer = self._build_final_answer(agents_responses_with_query)
+            for agent_name, answer in response.items():
+                logger.info(f"{agent_name} ответил: \n{answer}\n")
+        final_answer = self._build_final_answer(agents_responses_with_query, query)
         return final_answer
