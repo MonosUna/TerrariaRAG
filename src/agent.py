@@ -222,7 +222,7 @@ class GeneralAgent(Agent):
         "Давай ответы на четко поставленные вопросы, не добавляй лишнего. "
         "Твой ответ должен полснотью отвечать на поставленный вопрос. "
     )
-    
+
     USER_PROMPT = (
         "Используя следующие документы:\n{context}\n"
         "Ответь на запрос: {query}"
@@ -251,11 +251,11 @@ class GeneralAgent(Agent):
         context = ""
         for i, doc in enumerate(docs):
             context += f"\n{i}. Документ\n{doc}"
-        
+
         if context == "":
             context = "\nДокументы не найдены."
         #context = "\n".join([d.page_content for d in docs]) if docs else "Документы не найдены."
-        logger.info(f"GeneralAgent контекст для запроса '{query}': \n{context}\n")
+        # logger.info(f"GeneralAgent контекст для запроса '{query}': \n{context}\n")
 
         headers = {
             "Content-Type": "application/json"
