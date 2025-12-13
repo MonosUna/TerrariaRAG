@@ -16,4 +16,4 @@ RUN chmod +x docker/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["sh", "docker/entrypoint.sh"]
+CMD ["bash", "docker/entrypoint.sh"]

@@ -27,7 +27,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     logger.info("Загрузка TerrariaRAG...")
     logger.info("Инициализация LLM клиента...")
 
-    api_url = "http://192.168.68.111:8000/api/generate"
+    api_url = "http://192.168.68.109:11434/api/generate"
 
     logger.info("LLM клиент инициализирован.")
     logger.info("Загрузка вспомогательных данных...")
