@@ -1,8 +1,8 @@
 import os
+import json
 from dotenv import load_dotenv
 from typing import Any
 
-import requests
 import logging
 
 logger = logging.getLogger('RAG_TerrariaRAG')
@@ -188,10 +188,10 @@ class TerrariaRAG:
 
     def __init__(
             self,
-            api_url: Any,
+            llm_client: Any,
             agents: list,
             ):
-        self.api_url = api_url
+        self.llm_client = llm_client
         self.agents = agents
         self.message_history = []
         self.set_api_key()
@@ -214,37 +214,15 @@ class TerrariaRAG:
         system_prompt = self.SYSTEM_PROMPT__REDIRECT_TO_AGENTS
         user_prompt = "Запрос пользователя: {query}".format(query=query)
 
-        headers = {
-            "Content-Type": "application/json"
-        }
-        json = {
-            "model":"qwen3:8b",
-            "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-            "stream": False,
-            "options":{
-                "num_ctx":64000
-                }
-            }
-        response = requests.post(
-            self.api_url,
-            headers=headers,
-            json=json
-            )
-
-        if response.status_code != 200:
-            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-
-        response = response.json().get('response', '')
+        response = self.llm_client.call(system_prompt, user_prompt)
 
         # Парсинг ответа для получения списка агентов и вопросов
 
         start = response.find('{')
         end = response.rfind('}')
-
         if start != -1 and end != -1 and end > start:
             response = response[start:end+1]
 
-        import json
         try:
             agent_requests = json.loads(response).get("agents", [])
         except json.JSONDecodeError:
@@ -280,7 +258,6 @@ class TerrariaRAG:
                 }
                 agent_responses.append(agent_response)
 
-
         return agent_responses
 
     def _build_final_answer(self, agents_responses, query):
@@ -291,26 +268,7 @@ class TerrariaRAG:
         system_prompt = self.SYSTEM_PROMPT__SUMMARIZE_ANSWERS
         user_prompt = "Входные данные: {responses}\n\nНачальный вопрос пользователя: {query}".format(responses=agents_responses, query=query)
 
-        headers = {
-            "Content-Type": "application/json"
-        }
-        response = requests.post(
-            self.api_url,
-            headers=headers,
-            json= {
-                "model":"qwen3:8b",
-                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
-                "stream": False,
-                "options":{
-                    "num_ctx":64000
-                    }
-                }
-            )
-
-        if response.status_code != 200:
-            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-
-        final_answer = response.json().get('response', '')
+        final_answer = self.llm_client.call(system_prompt,  user_prompt)
         return final_answer
 
     def run(self, query: str) -> str:
@@ -319,10 +277,10 @@ class TerrariaRAG:
         """
         # logger.info(f"Запрос пользователя: \n{query}\n" + "=" * 50)
         agent_requests = self._get_reformulated_questions(query)
-        # logger.info(f"Переформулированные вопросы агентам: \n{agent_requests}\n" + "=" * 40)
+        logger.info(f"Переформулированные вопросы агентам: \n{agent_requests}\n" + "=" * 40)
         agents_responses = self._get_agents_responses(agent_requests)
         agents_responses_with_query = [{"Query": query}] + agents_responses
-        # logger.info(f"Ответы агентов: ")
+        logger.info(f"Ответы агентов: ")
         for response in agents_responses_with_query:
             if response.get("Query") is not None:
                 continue

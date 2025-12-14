@@ -58,12 +58,11 @@ class QwenLLM:
     def __init__(
             self,
             api_url: str = "",
-            model_name: str = "qwen-3.0-8b",
-            temperature: float = 0.2):
+            model_name: str = "qwen-3.0-8b"
+            ):
 
         self.api_url = api_url
         self.model_name = model_name
-        self.temperature = temperature
 
     def call(self, system_prompt: str, user_prompt: str) -> str:
         """
@@ -79,15 +78,16 @@ class QwenLLM:
         response = requests.post(
             self.api_url,
             headers=headers,
-            json= {
-                "model":"qwen3:8b",
-                "prompt":"{system}\n{user}".format(system=system_prompt, user=user_prompt),
+            json = {
+                "model": "qwen3:8b",
+                "prompt": "{system}\n{user}".format(system=system_prompt, user=user_prompt),
                 "stream": False,
-                "options":{
-                    "num_ctx":64000
-                    }
+                "options": {
+                    "num_ctx": 64000,
+                    "num_predict": 10000
                 }
-            )
+            }
+        )
 
         if response.status_code != 200:
             raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
@@ -108,9 +108,9 @@ class Agent(abc.ABC):
     Абстрактный класс для Агента
     """
 
-    def __init__(self, name: str, api_url: str):
+    def __init__(self, name: str, llm_client: str):
         self.name = name
-        self.api_url = api_url
+        self.llm_client = llm_client
 
     @abc.abstractmethod
     def call(self, query: str, **kwargs) -> Dict[str, Any]:
@@ -138,12 +138,12 @@ class CraftAgent(Agent):
     def __init__(
             self,
             name: str,
-            api_url: str,
+            llm_client: str,
             recipes: Any,
             embeddings: Optional[Any] = None,
             max_recipes: int = 5
             ):
-        super().__init__(name, api_url)
+        super().__init__(name, llm_client)
         self.recipes = recipes
         self.max_recipes = max_recipes
         self.embeddings = embeddings
@@ -182,31 +182,17 @@ class CraftAgent(Agent):
         item_names = "\n".join([d.page_content for d in docs])
 
         context = self._get_recipes_context(item_names.split("\n"))
-        # logger.info(f"CraftAgent контекст для запроса '{query}': \n{context}\n")
 
         headers = {
             "Content-Type": "application/json"
         }
+        
+        response = self.llm_client.call(
+            CraftAgent.SYSTEM_PROMPT,
+            CraftAgent.USER_PROMPT.format(context=context, query=query)
+        )
 
-        response = requests.post(
-            self.api_url,
-            headers=headers,
-            json= {
-                "model":"qwen3:8b",
-                "prompt":f"{CraftAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
-                "stream": False,
-                "options":{
-                    "num_ctx":64000
-                    }
-                }
-            )
-
-        if response.status_code != 200:
-            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-
-        response_text = response.json().get('response', '')
-
-        return response_text, docs
+        return response, docs
 
 
 class GeneralAgent(Agent):
@@ -231,11 +217,11 @@ class GeneralAgent(Agent):
     def __init__(
             self,
             name: str,
-            api_url: str,
+            llm_client: str,
             embeddings: Optional[Any] = None,
             max_docs: int = 5
             ):
-        super().__init__(name, api_url)
+        super().__init__(name, llm_client)
         self.max_docs = max_docs
         self.embeddings = embeddings
         self.vectorstore = Chroma(persist_directory="./terraria_db/general", embedding_function=self.embeddings)
@@ -254,32 +240,17 @@ class GeneralAgent(Agent):
 
         if context == "":
             context = "\nДокументы не найдены."
-        #context = "\n".join([d.page_content for d in docs]) if docs else "Документы не найдены."
-        # logger.info(f"GeneralAgent контекст для запроса '{query}': \n{context}\n")
 
         headers = {
             "Content-Type": "application/json"
         }
+        
+        response = self.llm_client.call(
+            GeneralAgent.SYSTEM_PROMPT,
+            GeneralAgent.USER_PROMPT.format(context=context, query=query)
+        )
 
-        response = requests.post(
-            self.api_url,
-            headers=headers,
-            json= {
-                "model":"qwen3:8b",
-                "prompt":f"{GeneralAgent.SYSTEM_PROMPT}\n{CraftAgent.USER_PROMPT.format(context=context, query=query)}",
-                "stream": False,
-                "options":{
-                    "num_ctx": 64000
-                    }
-                }
-            )
-
-        if response.status_code != 200:
-            raise ValueError(f"Ошибка при вызове модели: {response.status_code}, {response.text}")
-
-        response_text = response.json().get('response', '')
-
-        return response_text, docs
+        return response, docs
 
 
 __all__ = ["QwenLLM", "Agent", "CraftAgent", "GeneralAgent"]

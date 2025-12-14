@@ -3,7 +3,7 @@ import os
 import re
 import regex
 
-with open("data/data/recipes_new.json", "r", encoding="utf-8") as f:
+with open("data/data/recipes.json", "r", encoding="utf-8") as f:
     recipes = json.load(f)
 
 def remove_accent_chars(text: str) -> str:
@@ -567,14 +567,16 @@ def my_handler(name, args):
         return args[0]
     
     if name_l == "recipes":
-        if len(args) == 2:
-            action = args[0].split('=', 1)[0].strip()
-            recipe_names = args[0].split('=', 1)[1].strip().split('/')
-            if len(recipe_names) >= 2:
-                print(recipe_names)
-            recipe_names = [name.strip() for name in recipe_names]
-        else:
-            return ""
+        action = ""
+        recipe_names = []
+        for arg in args:
+            arg_action = arg.split('=', 1)[0].strip()
+            if arg_action in ["result", "ingredient"]:
+                action = arg_action
+                recipe_names = arg.split('=', 1)[1].strip().split('/')
+                recipe_names = [name.strip() for name in recipe_names]
+                break
+
         if action == "result":
             text = ""
             for recipe_name in recipe_names:

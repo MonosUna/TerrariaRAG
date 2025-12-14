@@ -8,12 +8,12 @@ from langchain_huggingface import HuggingFaceEmbeddings
 try:
     # Импорт при использовании пакета src (например, uvicorn src.api:app)
     from .TerrariaRAG import TerrariaRAG
-    from .agent import CraftAgent, GeneralAgent
+    from .agent import CraftAgent, GeneralAgent, QwenLLM
     from .logging_config import setup_logging
 except ImportError:
     # Импорт при прямом запуске файла (python src/main.py)
     from TerrariaRAG import TerrariaRAG
-    from agent import CraftAgent, GeneralAgent
+    from agent import CraftAgent, GeneralAgent, QwenLLM
     from logging_config import setup_logging
 
 
@@ -27,7 +27,10 @@ def setup_terraria_rag() -> TerrariaRAG:
     logger.info("Загрузка TerrariaRAG...")
     logger.info("Инициализация LLM клиента...")
 
-    api_url = "http://192.168.68.109:11434/api/generate"
+    qwen_llm_client = QwenLLM(
+        api_url="http://192.168.68.109:11434/api/generate",
+        model_name="qwen-3.0-8b",
+    )
 
     logger.info("LLM клиент инициализирован.")
     logger.info("Загрузка вспомогательных данных...")
@@ -42,7 +45,7 @@ def setup_terraria_rag() -> TerrariaRAG:
 
     craft_agent = CraftAgent(
         name="CraftAgent",
-        api_url=api_url,
+        llm_client=qwen_llm_client,
         recipes=recipes,
         embeddings=embeddings,
         max_recipes=24
@@ -50,7 +53,7 @@ def setup_terraria_rag() -> TerrariaRAG:
 
     general_agent = GeneralAgent(
         name="GeneralAgent",
-        api_url=api_url,
+        llm_client=qwen_llm_client,
         embeddings=embeddings,
         max_docs=8
     )
@@ -59,7 +62,7 @@ def setup_terraria_rag() -> TerrariaRAG:
     logger.info("Создание TerrariaRAG...")
 
     terraria_rag = TerrariaRAG(
-        api_url=api_url,
+        llm_client=qwen_llm_client,
         agents=[
             craft_agent,
             general_agent
